@@ -1,0 +1,2 @@
+{"ts":"2024-03-04T00:55:42.058+0700","msg":"listen tcp :8085: bind: Only one usage of each socket address (protocol/network address/port) is normally permitted."}
+{"ts":"2024-03-04T01:10:02.165+0700","msg":"open internal/repository/elastic/queries/keywords-suggest_keywords.json: The system cannot find the file specified."}

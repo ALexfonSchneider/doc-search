@@ -1,0 +1,11 @@
+{
+  "suggest": {
+    "queries-suggest": {
+      "prefix": "%s",
+      "completion": {
+        "size": 10,
+        "field": "query"
+      }
+    }
+  }
+}

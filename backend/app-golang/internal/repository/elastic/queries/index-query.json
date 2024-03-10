@@ -1,0 +1,14 @@
+{
+  "script": {
+    "source": "ctx._source.query.weight += params.count",
+    "params": {
+      "count": 1
+    }
+  },
+  "upsert": {
+    "query": {
+      "input": "%s",
+      "weight": 1
+    }
+  }
+}

@@ -1,0 +1,73 @@
+{
+    "size": "%d",
+    "from": "%d",
+    "query": {
+        "bool": {
+            "filter": [
+                %s
+            ],
+            "should": [
+                {
+                    "match": {
+                        "article.authors.name": {
+                            "query": "%s",
+                            "boost": 5
+                        }
+                    }
+                },
+                {
+                    "match": {
+                        "article.keywords": {
+                            "query": "%s"
+                        }
+                    }
+                },
+                {
+                    "match": {
+                        "article.title": {
+                            "query": "%s",
+                            "operator": "and",
+                            "boost": 2
+                        }
+                    }
+                },
+                {
+                    "match": {
+                        "article.title": {
+                            "query": "%s"
+                        }
+                    }
+                },
+                {
+                    "match": {
+                        "article.anatation": {
+                            "query": "%s"
+                        }
+                    }
+                },
+                {
+                    "match": {
+                        "article.content": {
+                            "query": "%s",
+                            "operator": "and",
+                            "boost": 2
+                        }
+                    }
+                },
+                {
+                    "match": {
+                        "article.content": {
+                            "query": "%s"
+                        }
+                    }
+                }
+            ]
+        }
+    },
+    "highlight": {
+        "fragment_size": 150,
+        "fields": {
+            "article.content":  { "pre_tags" : ["<b>"], "post_tags" : ["</b>"] }
+        }
+    }
+}

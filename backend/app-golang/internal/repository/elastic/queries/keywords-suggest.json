@@ -1,0 +1,11 @@
+{
+  "suggest": {
+    "keywords_suggest": {
+      "prefix": "%s",
+      "completion": {
+        "size": 10,
+        "field": "keywords_suggest"
+      }
+    }
+  }
+}
