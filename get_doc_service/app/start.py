@@ -1,7 +1,8 @@
 import json
+from config import MONGO_URL
+from src.services.GetDocsService import GetDocsService
 from src.documents.models import Document
-from src.documents.providers.providers import DocumentProvider, DocumentProviderParse
-from src.services import GetDocsService
+from src.documents.providers.providers import DocumentProvider
 
 class DocumentProviderFromJson(DocumentProvider):
     def __init__(self, path: str) -> None:
@@ -16,11 +17,11 @@ class DocumentProviderFromJson(DocumentProvider):
 
 
 if __name__ == "__main__":
-    provider = DocumentProviderFromJson("documents.json") 
+    provider = DocumentProviderFromJson("./documents.json") 
     
     # with open("documents.json", "w+") as file:
     #     file.write(json.dumps([document.model_dump() for document in provider.get_documents()]))
     
-    thread = GetDocsService(provider=provider)
+    thread = GetDocsService(provider=provider, mongo_conn=MONGO_URL)
     thread.start()
     thread.join()

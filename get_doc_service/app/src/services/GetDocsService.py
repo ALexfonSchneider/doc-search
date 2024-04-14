@@ -1,3 +1,4 @@
+import datetime
 import hashlib
 import re
 import tempfile
@@ -6,26 +7,24 @@ import PyPDF2
 import requests
 from src.documents.providers.providers import DocumentProvider
 from src.documents.parser.loader import download_article
-from src.documents.providers import DocumentProviderParse
 from src.documents.models import Document, Metrics
 from pymongo import MongoClient
 from langdetect import DetectorFactory
 import langdetect
 from src.logger import logger
-from elasticsearch import Elasticsearch
 import spacy
 from spacy.tokens import Token
 
 
 email_regex = r"""(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])"""
 email_regex_pattern = re.compile(email_regex)
- 
+
+
 class GetDocsService(Thread):
-    def __init__(self, provider: DocumentProvider, delay = 24 * 60 * 60) -> None:
+    def __init__(self, provider: DocumentProvider, mongo_conn: str, delay = 24 * 60 * 60) -> None:
         self._delay = delay
         self._provider = provider
-        self._mongo_client = MongoClient('localhost', 27017, username='root', password='password')
-        self._elastic_client = Elasticsearch("http://localhost:9200")
+        self._mongo_client = MongoClient(mongo_conn)
 
         DetectorFactory.seed = 0
         
@@ -42,8 +41,8 @@ class GetDocsService(Thread):
         
         #TODO: обработать
         if lang not in self.languages.keys():
-            raise ValueError()
-        
+            return []
+                    
         doc = self.languages[lang](content)
         
         ents = [ent.text for ent in doc.ents]
@@ -65,7 +64,6 @@ class GetDocsService(Thread):
 
 
     def __full_text_clean(self, text: str):
-        # logger.debug(f"token {token}")
         text = re.sub(r'\\x\d*', '', text)
         text = re.sub(r'\\x00(\d)*', '', text)
         text = text.replace(u"\u0000", "").replace(u"\001f", "").replace(u"\001e", "")
@@ -94,20 +92,6 @@ class GetDocsService(Thread):
         return [
             {"value": key, "count": count} for key, count in sorted(cloud.items(), key=lambda item: item[1], reverse=True)
         ]
-
-        
-
-    def __filter_new_documents(self, provided_documents: list[Document]) -> list[Document]:
-        stored_documents_id = [
-            value['article_id'] for value in self._mongo_client["doc-search"]['documents'].aggregate([{"$project": {"article_id": "$article.article_id"}}])
-        ]
-        
-        new_documents = []
-        for document in provided_documents:
-            if document.article.article_id not in stored_documents_id:
-                new_documents.append(document)
-        
-        return new_documents
     
     
     def _index_keywords_suggesting(self, keyword: str):
@@ -126,28 +110,43 @@ class GetDocsService(Thread):
         }, retry_on_conflict=3)
     
     
-    def _add_to_index(self, documents: list[Document]):
+    def _database_handle(self, documents: list[Document]):
+        income_ids = set(map(lambda x: x.article.article_id, documents))
+        
+        exists = self._mongo_client["doc-search"]["documents"].find({}, {"article.article_id": 1, "hash": 1})
+        exists_ids = set(map(lambda x: x["article"]["article_id"], exists))
+        
+        deleted = exists_ids - income_ids
+        new = income_ids - exists_ids
+        
+        for id in deleted:
+            self._mongo_client["doc-search"]["actions"].insert_one({
+                "article_id": id,
+                "status": "new",
+                "action": "delete",
+                "created_at": datetime.datetime.now(),
+                "updated_at": None
+            })
+        
         for document in documents:
-            try:
+            if document.article.article_id in new:
+                logger.info(f"adding new document {document.article.article_id}")
                 document_dict={
                     "article": document.article.model_dump(),
                     "archive": document.archive.model_dump(exclude=["articles"]),
                     "metrics": document.metrics.model_dump()
                 }
-                self._mongo_client["doc-search"]["documents"].insert_one(document_dict)
-                self._elastic_client.index(index="states", document={
-                    "article": document_dict["article"],
-                    "archive": document_dict["archive"],
-                    "metrics": document_dict["metrics"]
+                self._mongo_client["doc-search"]["actions"].insert_one({
+                    "article_id": document.article.article_id,
+                    "status": "new",
+                    "action": "add",
+                    "created_at": datetime.datetime.now(),
+                    "updated_at": None,
+                    "document": document_dict
                 })
                 
-                for keyword in document.article.keywords:
-                    self._index_keywords_suggesting(keyword)
-                
-            except Exception as exc:
-                logger.error(exc.args)
-                raise exc
-        
+        return list(deleted), list(new)
+    
     
     def __load_content(self, document: Document):
         response = requests.get(document.article.link)
@@ -171,24 +170,22 @@ class GetDocsService(Thread):
                     
     def run(self) -> None:
         logger.debug('start service\n')
+        
         # while True:
         logger.debug('start collecting documents\n')
         documents = self._provider.get_documents()
         logger.debug(f'get {len(documents)} documents')
         
-        new_documents = self.__filter_new_documents(documents)
-        
-        logger.debug(f'new documents count: {len(new_documents)}\n')
-        
-        for document in new_documents:
+        for document in documents:
             logger.debug(f'document: {document}')
             self.__load_content(document)
         
-            document.metrics = self.__calc_metrics(document)    
+            document.metrics = self.__calc_metrics(document)
             logger.debug(f'''{document.article.title}: {sorted(document.metrics.word_cloud, key=lambda item: item.count, reverse=True)}\n\n''')
         
+        deleted, new = self._database_handle(documents)
         
-            self._add_to_index([document])
+        logger.info(f"new: {new}; deleted: {deleted}")
                 
-        # sleep(secs=self._delay)
+            # sleep(secs=self._delay)
     

@@ -1,9 +1,6 @@
 import asyncio
 import os
-import PyPDF2
 import aiohttp
-import tempfile
-import re
 from src.documents.models import Archive
 from src.documents.parser import parse_article_page, parse_archives_page, parse_archive_page
 from uuid import uuid4
