@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/popover"
 import { Input } from "@/components/ui/input"
 import { HoverCard, HoverCardTrigger } from "@radix-ui/react-hover-card"
-import { FC, useMemo, useState } from "react"
+import { FC, useEffect, useState } from "react"
 import { ComboboxKeywordsProps } from "./combobox-keywords.interfaces"
 import { useKeywordsSuggestions } from "./combobox-keyword.queries"
 
@@ -46,7 +46,7 @@ export const ComboboxKeywords: FC<ComboboxKeywordsProps> = ({selected_keywords, 
         }
     })
 
-    useMemo(() => {
+    useEffect(() => {
         form.setValue("keywords", selected_keywords)
     }, [selected_keywords])
 

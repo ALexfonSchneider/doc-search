@@ -1,6 +1,6 @@
 
 import { Input } from "@/components/ui/input";
-import { FC, useMemo, useState } from "react";
+import { FC, useContext, useMemo, useState } from "react";
 import React from "react";
 import { SuggestionsList } from "./suggestions/suggestions";
 import { SearchProps } from "./search.interfaces";
@@ -15,19 +15,23 @@ import {
 } from "@/components/ui/accordion"
 
 import { useAppDispatch, useAppSelector } from "@/lib/hooks";
-import { addKeyword, removeKeyword, setQuery } from "@/lib/reducers/search";
+import { addKeyword, removeKeyword, setQuery, setYear } from "@/lib/reducers/search";
 import { Badge } from "../ui/badge";
 import { Cross1Icon } from "@radix-ui/react-icons";
 import { ComboboxJornal } from "../search-filters/comboboxes/combobox-jornal";
 import { ComboboxKeywords } from "../search-filters/comboboxes/combobox-keywords/combobox-keywords";
+import { ComboboxYear } from "../search-filters/comboboxes/combobox-year/combobox-year";
+import { MetricsContext } from "../_providers/metrics/metrics.provider";
 
 export const Search: FC<SearchProps> = ({className}) => {
     const dispatch = useAppDispatch()
 
-    const [query, keywords] = useAppSelector(state => [state.search.query, state.search.selected_keywords])
+    const [query, keywords, selected_year] = useAppSelector(state => [state.search.query, state.search.selected_keywords, state.search.selected_year])
 
     const [localQuery, setLocalQuery] = useState<string>("")
     const [debauncesQuery] = useDebounce(localQuery, 500)
+
+    const years = useContext(MetricsContext)
 
     useMemo(() => {
         setLocalQuery(query)
@@ -64,6 +68,15 @@ export const Search: FC<SearchProps> = ({className}) => {
         setSuggestionActive(false)
     };
 
+    const onYearSelect = (value: string | null) => {
+        if (selected_year == value) {
+            dispatch(setYear(null))
+        }
+        else {
+            dispatch(setYear(value))
+        }
+    }
+
     const onAddKeyword = (keyword: string) => dispatch(addKeyword(keyword))
     const onRemoveKeyword = (keyword: string) => dispatch(removeKeyword(keyword))
 
@@ -78,9 +91,10 @@ export const Search: FC<SearchProps> = ({className}) => {
                     <AccordionItem value="filters">
                         <AccordionTrigger className="text-sm select-none">Фильтры</AccordionTrigger>
                         <AccordionContent>
-                            <div className="flex flex-row gap-2">
+                            <div className="flex flex-row flex-wrap md:justify-start sl:justify-center gap-2">
                                 <ComboboxJornal/>
                                 <ComboboxKeywords selected_keywords={keywords} onRemoveKeyword={onRemoveKeyword} onAddKeyword={onAddKeyword}/>
+                                <ComboboxYear selected_year={selected_year} years_available={years.years.map(d => d.year)} onYearSelect={onYearSelect}/>
                             </div>
                         </AccordionContent>
                     </AccordionItem>

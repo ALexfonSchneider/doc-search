@@ -127,12 +127,12 @@ export const Article: FC<SearchedDocument> = ({document, onBadgeClick}) => {
     }
 
     return (
-        <Card>
+        <Card className="">
             <CardHeader className="text-left text-lg font-medium">
-                <a href={document.article.link}>{document.article.title}</a>
-                <CardDescription className="text-left">
+                <a className="text-sm" href={document.article.link}>{document.article.title}</a>
+                <CardDescription className="text-xs font-serif text-[#006621]">
                     { document.article.authors.length == 1 ? 
-                        `Автор: ${document.article.authors[0].name}` : `Авторы: ${document.article.authors.map(author => author.name).join(',')}`
+                        `${document.article.authors[0].name}` : `${document.article.authors.map(author => author.name).join(', ')}`
                     }  
                 </CardDescription>
             </CardHeader>

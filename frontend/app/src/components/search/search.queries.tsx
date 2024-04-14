@@ -8,10 +8,3 @@ export const useQuerySuggestions = (query: string) => useQuery({
     initialData: {suggestions: []},
     retry: false
 })
-
-
-export const useTags = () => useQuery({
-    queryKey: ["query"],
-    retry: false,
-    queryFn: () =>  SearchAPI.getTags(),
-})

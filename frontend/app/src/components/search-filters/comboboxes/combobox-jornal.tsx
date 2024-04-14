@@ -72,9 +72,11 @@ export function ComboboxJornal() {
                             >
                                 <HoverCard>
                                     <HoverCardTrigger>
+                                    <span className="pr-2 text-xs">
                                         {field.value.length > 0
                                         ? jornals.filter(jornal => field.value.includes(jornal.value)).map(jornal => jornal.label).join(", ")
-                                        : <span className="pr-2 text-xs">Все</span>} 
+                                        : "Все"}
+                                    </span> 
                                     </HoverCardTrigger>
                                 </HoverCard>
                             </Button>
