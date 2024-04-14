@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/knadh/koanf/parsers/yaml"
 	"github.com/knadh/koanf/providers/file"
@@ -11,13 +12,37 @@ import (
 )
 
 type MongoConfig struct {
-	Conn string `koanf:"conn"`
+	Conn    string       `koanf:"conn"`
+	DbName  string       `koanf:"dbName"`
+	Docs    MongoDocs    `json:"docs"`
+	Actions MongoActions `json:"actions"`
+}
+
+type MongoDocs struct {
+	CollectionName string `koanf:"collectionName"`
+}
+
+type MongoActions struct {
+	CollectionName string `koanf:"collectionName"`
 }
 
 type ElasticConfig struct {
-	Conn     string `koanf:"conn"`
-	Username string `koanf:"username"`
-	Password string `koanf:"password"`
+	Conn            []string               `json:"conn"`
+	Docs            ElasticDocs            `json:"docs"`
+	SuggestKeywords ElasticSuggestKeywords `json:"suggestKeywords"`
+	SuggestQueries  ElasticSuggestQueries  `json:"suggestQueries"`
+}
+
+type ElasticDocs struct {
+	Index string `koanf:"index"`
+}
+
+type ElasticSuggestKeywords struct {
+	Index string `koanf:"index"`
+}
+
+type ElasticSuggestQueries struct {
+	Index string `koanf:"index"`
 }
 
 type HTTPConfig struct {
@@ -28,10 +53,17 @@ type HTTPConfig struct {
 	MaxHeaderKBytes int `koanf:"max_header_kb"`
 }
 
+type Redis struct {
+	Conn            string         `koanf:"conn"`
+	Password        string         `koanf:"password"`
+	CacheExpireTime *time.Duration `json:"cacheExpireTime"`
+}
+
 type Config struct {
-	Mongo   MongoConfig   `koanf:"mongo"`
-	Elastic ElasticConfig `koanf:"elastic"`
 	Http    HTTPConfig    `koanf:"http"`
+	Elastic ElasticConfig `json:"elastic"`
+	Mongo   MongoConfig   `json:"mongo"`
+	Redis   Redis         `json:"redis"`
 }
 
 const (

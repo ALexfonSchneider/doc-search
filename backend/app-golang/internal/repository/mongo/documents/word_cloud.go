@@ -1,13 +1,13 @@
-package mongo
+package documents
 
 import (
 	"context"
-	"doc-search-app-backend/internal/entities"
+	"doc-search-app-backend/internal/entity"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func (r *Repository) GetWordCloud(ctx context.Context, limit int) (*[]entities.WordCloudItem, error) {
+func (r *Repository) GetWordCloud(ctx context.Context, limit int) ([]entity.WordCloudItem, error) {
 	pipeline := bson.A{
 		bson.D{{"$unwind", bson.D{{"path", "$metrics.word_cloud"}}}},
 		bson.D{
@@ -38,20 +38,11 @@ func (r *Repository) GetWordCloud(ctx context.Context, limit int) (*[]entities.W
 	}
 	defer cursor.Close(ctx)
 
-	var wordCloudItems []entities.WordCloudItem
+	var wordCloudItems []entity.WordCloudItem
 	err = cursor.All(ctx, &wordCloudItems)
 	if err != nil {
 		return nil, err
 	}
 
-	return &wordCloudItems, nil
-}
-
-func (r *Repository) GetMetrics(ctx context.Context, wordCloudLimit int) (*entities.Metrics, error) {
-	wordCloud, err := r.GetWordCloud(ctx, wordCloudLimit)
-	if err != nil {
-		return nil, err
-	}
-
-	return &entities.Metrics{WordCloud: *wordCloud}, nil
+	return wordCloudItems, nil
 }

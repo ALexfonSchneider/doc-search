@@ -1,19 +1,16 @@
-package mongo
+package actions
 
 import (
+	"context"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"time"
 )
 
-import (
-	"context"
-)
-
 type Repository struct {
-	client *mongo.Client
-	db     *mongo.Database
-	docs   *mongo.Collection
+	client  *mongo.Client
+	db      *mongo.Database
+	actions *mongo.Collection
 
 	dbName         string
 	collectionName string
@@ -28,11 +25,12 @@ func NewRepository(ctx context.Context, conn string, dbName string, collectionNa
 	db := client.Database(dbName)
 
 	return &Repository{
+		client:  client,
+		db:      db,
+		actions: db.Collection(collectionName),
+
 		dbName:         dbName,
 		collectionName: collectionName,
-		client:         client,
-		db:             db,
-		docs:           db.Collection(collectionName),
 	}, nil
 }
 

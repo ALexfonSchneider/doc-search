@@ -2,25 +2,11 @@ package elastic
 
 import (
 	"context"
-	"crypto"
-	"doc-search-app-backend/internal/entities"
+	"doc-search-app-backend/internal/entity"
 	"encoding/json"
 	"fmt"
 	"strings"
 )
-
-var SearchQueryTemplate string
-
-func BuildSearchQuery(query string, keywords []string, page int, size int) string {
-	var filters string = ""
-
-	for _, keyword := range keywords {
-		filters += fmt.Sprintf(`{"term": {"article.keywords.keyword": "%s"}}`, keyword)
-	}
-
-	return fmt.Sprintf(SearchQueryTemplate, size, (page-1)*size, filters,
-		query, query, query, query, query, query, query)
-}
 
 type searchResult struct {
 	Hits struct {
@@ -32,17 +18,19 @@ type searchResult struct {
 			FoodId      string  `json:"_id"`
 			SearchScore float64 `json:"_score"`
 			Source      struct {
-				Article entities.Article `json:"article"`
-				Archive entities.Archive `json:"archive"`
-				Metrics entities.Metrics `json:"metrics"`
+				Article entity.Article `json:"article"`
+				Archive entity.Archive `json:"archive"`
+				Metrics entity.Metrics `json:"metrics"`
 			} `json:"_source"`
-			Highlight entities.Highlight
+			Highlight entity.Highlight
 		} `json:"hits"`
 	} `json:"hits"`
 }
 
-func (r *Repository) SearchArticle(ctx context.Context, query string, keywords []string, page int, size int) (*entities.SearchResultsPaginate, error) {
-	searchQuery := BuildSearchQuery(query, keywords, page, size)
+func (r *Repository) SearchArticle(ctx context.Context, query string, keywords []string, year *int, page int, size int) (*entity.SearchResultsPaginate, error) {
+	searchQuery := r.BuildSearchQuery(query, keywords, year, page, size)
+
+	fmt.Println(searchQuery)
 
 	response, err := r.client.Search(
 		r.client.Search.WithContext(ctx),
@@ -61,22 +49,22 @@ func (r *Repository) SearchArticle(ctx context.Context, query string, keywords [
 		return nil, err
 	}
 
-	var articles []entities.SearchResult
+	var articles []entity.Document
 
 	for _, document := range mapRes.Hits.Content {
-		articles = append(articles, entities.SearchResult{
+		articles = append(articles, entity.Document{
 			Article:   document.Source.Article,
 			Archive:   document.Source.Archive,
 			Metrics:   document.Source.Metrics,
-			Highlight: document.Highlight,
+			Highlight: &document.Highlight,
 		})
 	}
 
 	if articles == nil {
-		articles = []entities.SearchResult{}
+		articles = []entity.Document{}
 	}
 
-	return &entities.SearchResultsPaginate{
+	return &entity.SearchResultsPaginate{
 		Articles:  articles,
 		Page:      page,
 		Size:      size,
@@ -84,23 +72,25 @@ func (r *Repository) SearchArticle(ctx context.Context, query string, keywords [
 	}, nil
 }
 
-var IndexQueryQueryTemplate string
-
-func BuildIndexQuery(query string) string {
-	return fmt.Sprintf(IndexQueryQueryTemplate, query)
-}
-
-func (r *Repository) IndexQuery(ctx context.Context, query string) error {
-	indexQuery := BuildIndexQuery(query)
-
-	h := crypto.SHA256.New()
-	h.Write([]byte(query))
-	hash := fmt.Sprintf("%x", h.Sum(nil))
-
-	_, err := r.client.Update(r.querySuggestIndex, string(hash), strings.NewReader(indexQuery))
+func (r *Repository) GetDocument(ctx context.Context, id string) (*entity.Document, error) {
+	response, err := r.TypedClient.Get(r.searchIndex, id).Do(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	if !response.Found {
+		return nil, &entity.DocumentNotFoundErr{Id: id}
+	}
+
+	data, err := response.Source_.MarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+
+	var document entity.Document
+	if err := json.Unmarshal(data, &document); err != nil {
+		return nil, err
+	}
+
+	return &document, nil
 }

@@ -2,18 +2,10 @@ package elastic
 
 import (
 	"context"
-	"doc-search-app-backend/internal/entities"
+	"doc-search-app-backend/internal/entity"
 	"encoding/json"
-	"fmt"
 	"strings"
 )
-
-var SuggestKeywordQueryTemplate string
-var SuggestQueriesQueryTemplate string
-
-func BuildSuggestKeywordQuery(query string) string {
-	return fmt.Sprintf(SuggestKeywordQueryTemplate, query)
-}
 
 type keywordsSuggestResult struct {
 	Suggest struct {
@@ -29,10 +21,8 @@ type keywordsSuggestResult struct {
 	} `json:"suggest"`
 }
 
-func (r *Repository) SuggestKeywords(ctx context.Context, query string) (*entities.Suggestions, error) {
-	suggestQuery := BuildSuggestKeywordQuery(query)
-
-	fmt.Println(suggestQuery)
+func (r *Repository) SuggestKeywords(ctx context.Context, query string) (*entity.Suggestions, error) {
+	suggestQuery := r.BuildSuggestKeywordQuery(query)
 
 	response, err := r.client.Search(
 		r.client.Search.WithContext(ctx),
@@ -54,11 +44,7 @@ func (r *Repository) SuggestKeywords(ctx context.Context, query string) (*entiti
 		suggestions = append(suggestions, options.Content.KeywordsSuggest.Value)
 	}
 
-	return &entities.Suggestions{Suggestions: suggestions}, nil
-}
-
-func BuildSuggestQueriesQuery(query string) string {
-	return fmt.Sprintf(SuggestQueriesQueryTemplate, query)
+	return &entity.Suggestions{Suggestions: suggestions}, nil
 }
 
 type queriesSuggestResult struct {
@@ -75,8 +61,8 @@ type queriesSuggestResult struct {
 	} `json:"suggest"`
 }
 
-func (r *Repository) SuggestQueries(ctx context.Context, query string) (*entities.Suggestions, error) {
-	suggestQuery := BuildSuggestQueriesQuery(query)
+func (r *Repository) SuggestQueries(ctx context.Context, query string) (*entity.Suggestions, error) {
+	suggestQuery := r.BuildSuggestQueriesQuery(query)
 
 	response, err := r.client.Search(
 		r.client.Search.WithContext(ctx),
@@ -98,5 +84,5 @@ func (r *Repository) SuggestQueries(ctx context.Context, query string) (*entitie
 		suggestions = append(suggestions, options.Content.QuerySuggest.Value)
 	}
 
-	return &entities.Suggestions{Suggestions: suggestions}, nil
+	return &entity.Suggestions{Suggestions: suggestions}, nil
 }

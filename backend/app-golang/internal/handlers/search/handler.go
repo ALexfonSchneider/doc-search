@@ -2,6 +2,7 @@ package search
 
 import (
 	"context"
+	"fmt"
 	"github.com/labstack/echo/v4"
 	"strconv"
 )
@@ -32,9 +33,22 @@ func (h *Handler) Handle(c echo.Context) error {
 		return err
 	}
 
-	err = h.search.IndexQuery(context.Background(), query)
+	var Year *int = nil
+	yearQ := c.QueryParam("year")
+	if yearQ != "" {
+		year, err := strconv.Atoi(yearQ)
+		if err != nil {
+			return err
+		}
+		Year = &year
+	}
 
-	result, err := h.search.SearchArticle(ctx, query, keywords, page, size)
+	go func() {
+		err = h.search.IndexQuery(context.Background(), query)
+		fmt.Println(err)
+	}()
+
+	result, err := h.search.SearchArticle(ctx, query, keywords, Year, page, size)
 	if err != nil {
 		return err
 	}

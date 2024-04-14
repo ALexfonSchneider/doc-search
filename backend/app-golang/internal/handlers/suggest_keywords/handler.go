@@ -22,6 +22,5 @@ func (h *Handler) Handle(c echo.Context) error {
 		return err
 	}
 
-	c.Request().Header.Set("Content-Type", "application/json")
 	return c.JSON(200, suggestions)
 }

@@ -8,13 +8,26 @@ import (
 
 type Repository struct {
 	client              *elasticsearch.Client
+	TypedClient         *elasticsearch.TypedClient
 	searchIndex         string
 	keywordSuggestIndex string
 	querySuggestIndex   string
+
+	searchQueryTemplate         string
+	suggestKeywordQueryTemplate string
+	suggestQueriesQueryTemplate string
+	indexQueryQueryTemplate     string
+	indexKeywordTemplate        string
+	unIndexKeywordTemplate      string
 }
 
 func NewRepository(searchIndex string, keywordSuggestIndex string, querySuggestIndex string, conf elasticsearch.Config) (*Repository, error) {
 	client, err := elasticsearch.NewClient(conf)
+	if err != nil {
+		return nil, err
+	}
+
+	TypedClient, err := elasticsearch.NewTypedClient(conf)
 	if err != nil {
 		return nil, err
 	}
@@ -39,15 +52,28 @@ func NewRepository(searchIndex string, keywordSuggestIndex string, querySuggestI
 		return nil, err
 	}
 
-	SearchQueryTemplate = string(SearchQueryTemplateBytes)
-	SuggestKeywordQueryTemplate = string(SuggestKeywordQueryTemplateBytes)
-	SuggestQueriesQueryTemplate = string(SuggestQueriesTemplateBytes)
-	IndexQueryQueryTemplate = string(IndexQueryTemplateBytes)
+	IndexKeywordTemplateBytes, err := os.ReadFile("internal/repository/elastic/queries/index-keyword.json")
+	if err != nil {
+		return nil, err
+	}
+
+	UnIndexKeywordTemplate, err := os.ReadFile("internal/repository/elastic/queries/unindex-keyword.json")
+	if err != nil {
+		return nil, err
+	}
 
 	return &Repository{
 		client:              client,
+		TypedClient:         TypedClient,
 		searchIndex:         searchIndex,
 		keywordSuggestIndex: keywordSuggestIndex,
 		querySuggestIndex:   querySuggestIndex,
+
+		searchQueryTemplate:         string(SearchQueryTemplateBytes),
+		suggestKeywordQueryTemplate: string(SuggestKeywordQueryTemplateBytes),
+		suggestQueriesQueryTemplate: string(SuggestQueriesTemplateBytes),
+		indexQueryQueryTemplate:     string(IndexQueryTemplateBytes),
+		indexKeywordTemplate:        string(IndexKeywordTemplateBytes),
+		unIndexKeywordTemplate:      string(UnIndexKeywordTemplate),
 	}, nil
 }
