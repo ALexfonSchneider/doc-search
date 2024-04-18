@@ -6,6 +6,7 @@ import (
 	"doc-search-app-backend/internal/config"
 	"doc-search-app-backend/internal/handlers/metrics"
 	"doc-search-app-backend/internal/handlers/search"
+	"doc-search-app-backend/internal/handlers/search_udk"
 	"doc-search-app-backend/internal/handlers/suggest_keywords"
 	"doc-search-app-backend/internal/handlers/suggest_queries"
 	"doc-search-app-backend/internal/middlewares"
@@ -54,7 +55,7 @@ func main() {
 
 	fmt.Println(cfg)
 
-	elasticRepo, err := elasticrepo.NewRepository(cfg.Elastic.Docs.Index, cfg.Elastic.SuggestKeywords.Index, cfg.Elastic.SuggestQueries.Index,
+	elasticRepo, err := elasticrepo.NewRepository(cfg.Elastic.Docs.Index, cfg.Elastic.SuggestKeywords.Index, cfg.Elastic.SuggestQueries.Index, "udk",
 		elasticsearch.Config{
 			Addresses: cfg.Elastic.Conn,
 		})
@@ -89,7 +90,8 @@ func main() {
 		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
 	}))
 
-	SearchHandler := search.NewHadler(elasticRepo)
+	SearchHandler := search.NewHandler(elasticRepo)
+	SearchUdkHandler := search_udk.NewHandler(elasticRepo)
 	SuggestKeywordsHandler := suggest_keywords.NewHadler(elasticRepo)
 	SuggestQueriesHandler := suggest_queries.NewHadler(elasticRepo)
 	MetricsHandler := metrics.NewHandler(mongoRepo, redisRepo)
@@ -100,6 +102,7 @@ func main() {
 	{
 		suggestGroup.GET("/keywords", SuggestKeywordsHandler.Handle)
 		suggestGroup.GET("/queries", SuggestQueriesHandler.Handle)
+		suggestGroup.GET("/udk", SearchUdkHandler.Handle)
 	}
 
 	e.GET("/metrics", MetricsHandler.Handle)

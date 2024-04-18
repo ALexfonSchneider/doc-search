@@ -4,51 +4,33 @@ import (
 	"context"
 	"fmt"
 	"github.com/labstack/echo/v4"
-	"strconv"
 )
 
 type Handler struct {
 	search Search
 }
 
-func NewHadler(search Search) *Handler {
+func NewHandler(search Search) *Handler {
 	return &Handler{search: search}
 }
 
 func (h *Handler) Handle(c echo.Context) error {
 	ctx := c.Request().Context()
 
-	query := c.QueryParam("query")
-	keywords, ok := c.QueryParams()["keywords_query[]"]
-	if !ok {
-		keywords = []string{}
-	}
-
-	page, err := strconv.Atoi(c.QueryParam("page"))
-	if err != nil {
-		return err
-	}
-	size, err := strconv.Atoi(c.QueryParam("size"))
-	if err != nil {
+	params := new(Params)
+	if err := c.Bind(params); err != nil {
 		return err
 	}
 
-	var Year *int = nil
-	yearQ := c.QueryParam("year")
-	if yearQ != "" {
-		year, err := strconv.Atoi(yearQ)
-		if err != nil {
-			return err
-		}
-		Year = &year
-	}
+	fmt.Println(params)
 
 	go func() {
-		err = h.search.IndexQuery(context.Background(), query)
+		err := h.search.IndexQuery(context.Background(), params.Query)
 		fmt.Println(err)
 	}()
 
-	result, err := h.search.SearchArticle(ctx, query, keywords, Year, page, size)
+	result, err := h.search.SearchArticle(ctx, params.Query, params.Keywords, params.Year,
+		params.Udk, params.Page, params.Size)
 	if err != nil {
 		return err
 	}

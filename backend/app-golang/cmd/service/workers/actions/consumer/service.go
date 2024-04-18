@@ -26,7 +26,7 @@ func newLogger(consumer string) (*zerolog.Logger, error) {
 }
 
 func Start(ctx context.Context, cfg config.Config) {
-	elasticRepo, err := elasticrepo.NewRepository(cfg.Elastic.Docs.Index, cfg.Elastic.SuggestKeywords.Index, cfg.Elastic.SuggestQueries.Index,
+	elasticRepo, err := elasticrepo.NewRepository(cfg.Elastic.Docs.Index, cfg.Elastic.SuggestKeywords.Index, cfg.Elastic.SuggestQueries.Index, "udk",
 		elasticsearch.Config{
 			Addresses: cfg.Elastic.Conn,
 		})

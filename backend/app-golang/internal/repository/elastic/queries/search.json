@@ -8,7 +8,6 @@
             ],
             "should": [
                 %s
-                %s
                 {
                     "match": {
                         "article.authors.name": {

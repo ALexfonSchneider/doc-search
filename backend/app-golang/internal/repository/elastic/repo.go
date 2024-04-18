@@ -12,6 +12,7 @@ type Repository struct {
 	searchIndex         string
 	keywordSuggestIndex string
 	querySuggestIndex   string
+	udkIndex            string
 
 	searchQueryTemplate         string
 	suggestKeywordQueryTemplate string
@@ -19,9 +20,10 @@ type Repository struct {
 	indexQueryQueryTemplate     string
 	indexKeywordTemplate        string
 	unIndexKeywordTemplate      string
+	searchUdkTemplate           string
 }
 
-func NewRepository(searchIndex string, keywordSuggestIndex string, querySuggestIndex string, conf elasticsearch.Config) (*Repository, error) {
+func NewRepository(searchIndex string, keywordSuggestIndex string, querySuggestIndex string, udkIndex string, conf elasticsearch.Config) (*Repository, error) {
 	client, err := elasticsearch.NewClient(conf)
 	if err != nil {
 		return nil, err
@@ -57,7 +59,12 @@ func NewRepository(searchIndex string, keywordSuggestIndex string, querySuggestI
 		return nil, err
 	}
 
-	UnIndexKeywordTemplate, err := os.ReadFile("internal/repository/elastic/queries/unindex-keyword.json")
+	UnIndexKeywordTemplateBytes, err := os.ReadFile("internal/repository/elastic/queries/unindex-keyword.json")
+	if err != nil {
+		return nil, err
+	}
+
+	searchUdkTemplateBytes, err := os.ReadFile("internal/repository/elastic/queries/search-udk.json")
 	if err != nil {
 		return nil, err
 	}
@@ -68,12 +75,14 @@ func NewRepository(searchIndex string, keywordSuggestIndex string, querySuggestI
 		searchIndex:         searchIndex,
 		keywordSuggestIndex: keywordSuggestIndex,
 		querySuggestIndex:   querySuggestIndex,
+		udkIndex:            udkIndex,
 
 		searchQueryTemplate:         string(SearchQueryTemplateBytes),
 		suggestKeywordQueryTemplate: string(SuggestKeywordQueryTemplateBytes),
 		suggestQueriesQueryTemplate: string(SuggestQueriesTemplateBytes),
 		indexQueryQueryTemplate:     string(IndexQueryTemplateBytes),
 		indexKeywordTemplate:        string(IndexKeywordTemplateBytes),
-		unIndexKeywordTemplate:      string(UnIndexKeywordTemplate),
+		unIndexKeywordTemplate:      string(UnIndexKeywordTemplateBytes),
+		searchUdkTemplate:           string(searchUdkTemplateBytes),
 	}, nil
 }

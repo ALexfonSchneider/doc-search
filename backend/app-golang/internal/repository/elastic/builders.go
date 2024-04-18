@@ -1,6 +1,9 @@
 package elastic
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 func (r *Repository) BuildIndexKeyword(query string) string {
 	return fmt.Sprintf(r.indexKeywordTemplate, query)
@@ -14,13 +17,13 @@ func (r *Repository) BuildIndexQuery(query string) string {
 	return fmt.Sprintf(r.indexQueryQueryTemplate, query)
 }
 
-func (r *Repository) BuildSearchQuery(query string, keywords []string, year *int, page int, size int) string {
-	var filters string = ""
-	var yearQuery string = ""
-	var keywordsQuery string = ""
+// TODO заменить *year на options
+func (r *Repository) BuildSearchQuery(query string, keywords []string, year *int, udk *string, page int, size int) string {
+	var filters []string
+	var queries []string
 
 	if year != nil {
-		yearQuery = fmt.Sprintf(`{
+		yearQuery := fmt.Sprintf(`{
 			"range": {
 				"article.published": {
 					"gte": "%d",
@@ -30,30 +33,27 @@ func (r *Repository) BuildSearchQuery(query string, keywords []string, year *int
 			}
 		}`, *year, (*year)+1)
 
-		filters += yearQuery
+		filters = append(filters, yearQuery)
+		queries = append(queries, yearQuery)
+	}
+
+	if udk != nil {
+		filters = append(filters, fmt.Sprintf(`{"term": {"article.udk": "%s"}}`, *udk))
+		queries = append(queries, fmt.Sprintf(`{"match": {"article.udk": {"query": "%s"}}}`, *udk))
 	}
 
 	for _, keyword := range keywords {
-		if filters != "" {
-			filters += ","
-		}
-		if keywordsQuery != "" {
-			keywordsQuery += ","
-		}
-
-		filters += fmt.Sprintf(`{"term": {"article.keywords.keyword": "%s"}}`, keyword)
-		keywordsQuery += fmt.Sprintf(`{"match": {"article.keywords": {"query": "%s"}}}`, keyword)
+		filters = append(filters, fmt.Sprintf(`{"term": {"article.keywords.keyword": "%s"}}`, keyword))
+		queries = append(queries, fmt.Sprintf(`{"match": {"article.keywords": {"query": "%s"}}}`, keyword))
 	}
 
-	if yearQuery != "" {
-		yearQuery += ","
+	queriesStr := strings.Join(queries, ",\n")
+	if queriesStr != "" {
+		queriesStr += ","
 	}
 
-	if keywordsQuery != "" {
-		keywordsQuery += ","
-	}
-
-	return fmt.Sprintf(r.searchQueryTemplate, size, (page-1)*size, filters, yearQuery, keywordsQuery,
+	return fmt.Sprintf(r.searchQueryTemplate, size, (page-1)*size,
+		strings.Join(filters, ",\n"), queriesStr,
 		query, query, query, query, query, query, query)
 }
 
@@ -63,4 +63,8 @@ func (r *Repository) BuildSuggestQueriesQuery(query string) string {
 
 func (r *Repository) BuildSuggestKeywordQuery(query string) string {
 	return fmt.Sprintf(r.suggestKeywordQueryTemplate, query)
+}
+
+func (r *Repository) BuildSearchUdkQuery(query string) string {
+	return fmt.Sprintf(r.searchUdkTemplate, query, query, query)
 }

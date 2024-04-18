@@ -27,8 +27,8 @@ type searchResult struct {
 	} `json:"hits"`
 }
 
-func (r *Repository) SearchArticle(ctx context.Context, query string, keywords []string, year *int, page int, size int) (*entity.SearchResultsPaginate, error) {
-	searchQuery := r.BuildSearchQuery(query, keywords, year, page, size)
+func (r *Repository) SearchArticle(ctx context.Context, query string, keywords []string, year *int, udk *string, page int, size int) (*entity.SearchResultsPaginate, error) {
+	searchQuery := r.BuildSearchQuery(query, keywords, year, udk, page, size)
 
 	fmt.Println(searchQuery)
 
