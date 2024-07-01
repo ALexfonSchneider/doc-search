@@ -30,7 +30,7 @@ func (r *Repository) UpdateDocument(ctx context.Context, document *entity.Docume
 }
 
 func (r *Repository) DeleteDocument(ctx context.Context, id string) error {
-	_, err := r.docs.UpdateOne(ctx, bson.M{"article.article_id": id}, bson.M{"$set": bson.M{"deleted": true}})
+	_, err := r.docs.DeleteMany(ctx, bson.M{"article.article_id": id})
 	if err != nil {
 		return err
 	}

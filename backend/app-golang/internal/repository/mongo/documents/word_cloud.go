@@ -38,7 +38,7 @@ func (r *Repository) GetWordCloud(ctx context.Context, limit int) ([]entity.Word
 	}
 	defer cursor.Close(ctx)
 
-	var wordCloudItems []entity.WordCloudItem
+	wordCloudItems := make([]entity.WordCloudItem, 0, 0)
 	err = cursor.All(ctx, &wordCloudItems)
 	if err != nil {
 		return nil, err

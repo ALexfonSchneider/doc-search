@@ -15,18 +15,20 @@ import {
 } from "@/components/ui/accordion"
 
 import { useAppDispatch, useAppSelector } from "@/lib/hooks";
-import { addKeyword, removeKeyword, setQuery, setYear } from "@/lib/reducers/search";
+import { Udk, addKeyword, removeKeyword, setQuery, setUdk, setYear } from "@/lib/reducers/search";
 import { Badge } from "../ui/badge";
 import { Cross1Icon } from "@radix-ui/react-icons";
 import { ComboboxJornal } from "../search-filters/comboboxes/combobox-jornal";
 import { ComboboxKeywords } from "../search-filters/comboboxes/combobox-keywords/combobox-keywords";
 import { ComboboxYear } from "../search-filters/comboboxes/combobox-year/combobox-year";
 import { MetricsContext } from "../_providers/metrics/metrics.provider";
+import { ComboboxUdk } from "../search-filters/comboboxes/combobox-udk/combobox-udk";
 
 export const Search: FC<SearchProps> = ({className}) => {
     const dispatch = useAppDispatch()
 
-    const [query, keywords, selected_year] = useAppSelector(state => [state.search.query, state.search.selected_keywords, state.search.selected_year])
+    const [query, keywords, selected_year, selected_udk] = useAppSelector(state => [state.search.query, state.search.selected_keywords, 
+        state.search.selected_year, state.search.selected_udk])
 
     const [localQuery, setLocalQuery] = useState<string>("")
     const [debauncesQuery] = useDebounce(localQuery, 500)
@@ -77,6 +79,10 @@ export const Search: FC<SearchProps> = ({className}) => {
         }
     }
 
+    const onUdkSelect = (udk: Udk | null) => {
+        dispatch(setUdk(udk))
+    } 
+
     const onAddKeyword = (keyword: string) => dispatch(addKeyword(keyword))
     const onRemoveKeyword = (keyword: string) => dispatch(removeKeyword(keyword))
 
@@ -95,6 +101,7 @@ export const Search: FC<SearchProps> = ({className}) => {
                                 <ComboboxJornal/>
                                 <ComboboxKeywords selected_keywords={keywords} onRemoveKeyword={onRemoveKeyword} onAddKeyword={onAddKeyword}/>
                                 <ComboboxYear selected_year={selected_year} years_available={years.years.map(d => d.year)} onYearSelect={onYearSelect}/>
+                                <ComboboxUdk selectedUdk={selected_udk} onSelectUdk={onUdkSelect}/>
                             </div>
                         </AccordionContent>
                     </AccordionItem>

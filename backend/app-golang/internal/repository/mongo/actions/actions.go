@@ -28,6 +28,10 @@ func (r *Repository) GetNewActions(ctx context.Context, limit int64, timeout tim
 }
 
 func (r *Repository) AddActions(ctx context.Context, actions []entity.DocAction) error {
+	if len(actions) == 0 {
+		return nil
+	}
+
 	var i []interface{}
 	for _, action := range actions {
 		i = append(i, action)

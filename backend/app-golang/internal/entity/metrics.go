@@ -12,5 +12,5 @@ type DocumentsInYearCount struct {
 
 type Metrics struct {
 	WordCloud []WordCloudItem        `json:"word_cloud" bson:"word_cloud"`
-	Years     []DocumentsInYearCount `json:"years,omitempty" bson:"-"`
+	Years     []DocumentsInYearCount `json:"years" bson:"-"`
 }

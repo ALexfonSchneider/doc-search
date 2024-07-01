@@ -64,7 +64,7 @@ func (r *Repository) GetYears(ctx context.Context) ([]entity.DocumentsInYearCoun
 		return nil, err
 	}
 
-	var years []entity.DocumentsInYearCount
+	years := make([]entity.DocumentsInYearCount, 0, 0)
 	if err = cursor.All(ctx, &years); err != nil {
 		return nil, err
 	}

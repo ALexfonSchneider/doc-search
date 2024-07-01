@@ -1,16 +1,23 @@
 import { config } from '@/config'
 import axios from "axios"
 import { SearchResultsPaginate } from './search-content.interfaces'
+import { Udk } from '@/lib/reducers/search'
 
-const searchDocuments = (query: string, selected_keywords: string[], year: string | null, page: number, size: number = 10) => {
-    const keywords_query = selected_keywords.length == 0 ? "" : selected_keywords
-
+const searchDocuments = (query: string, selected_keywords: string[], year: string | null, udk: Udk | null, page: number, size: number = 10) => {
     const params: any = {
-        query, page, keywords_query, size
+        q: query, page, count: size
+    }
+
+    if (selected_keywords.length != 0) {
+        params["keywords"] = selected_keywords
     }
 
     if (year != null) {
         params["year"] = year
+    }
+
+    if (udk) {
+        params['udk'] = udk.code
     }
 
     return axios.get<SearchResultsPaginate>(
@@ -19,7 +26,7 @@ const searchDocuments = (query: string, selected_keywords: string[], year: strin
             params
         },
     ).then(response => response.data)
-    }
+}
 
 
 

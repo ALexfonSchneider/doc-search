@@ -1,7 +1,6 @@
 package search
 
 import (
-	"context"
 	"fmt"
 	"github.com/labstack/echo/v4"
 )
@@ -22,10 +21,8 @@ func (h *Handler) Handle(c echo.Context) error {
 		return err
 	}
 
-	fmt.Println(params)
-
 	go func() {
-		err := h.search.IndexQuery(context.Background(), params.Query)
+		err := h.search.IndexQuery(ctx, params.Query)
 		fmt.Println(err)
 	}()
 

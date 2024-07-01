@@ -32,16 +32,16 @@ const SearchContentPagination: FC<SearchContentPaginationProps> = ({page, size, 
 
 const SearchContent: FC = () => {
     const dispatch = useAppDispatch()
-    const [query, selected_keywords, page, size, selected_year] = useAppSelector(state => [state.search.query, state.search.selected_keywords, state.search.page, state.search.size, state.search.selected_year])
+    const [query, selected_keywords, page, size, selected_year, udk] = useAppSelector(state => [state.search.query, state.search.selected_keywords, state.search.page, state.search.size, 
+        state.search.selected_year, state.search.selected_udk])
 
     const onBadgeClick = (value: string) => {
         dispatch(addKeyword(value))
     }
     
-    const documents = useDocuments(query, selected_keywords, selected_year, page, size)
+    const documents = useDocuments(query, selected_keywords, selected_year, udk, page, size)
 
     if(documents.isFetching) {
-        console.log("load")
         return <div>
             Loading
         </div>
@@ -59,7 +59,7 @@ const SearchContent: FC = () => {
                 <Article document={document} onBadgeClick={onBadgeClick}/>
             ))}
 
-            <SearchContentPagination onSelect={onSetPage} page={documents.data.page} total_size={documents.data.total_size} size={documents.data.size}/>
+            <SearchContentPagination onSelect={onSetPage} page={documents.data!.page} total_size={documents.data!.total_size} size={documents.data!.size}/>
         </div>
     )
 }

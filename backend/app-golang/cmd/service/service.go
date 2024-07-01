@@ -18,6 +18,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/rs/zerolog"
+	"net"
 	"net/http"
 	"os"
 	"sync"
@@ -52,8 +53,6 @@ func main() {
 		log.Error().Timestamp().Err(err)
 		return
 	}
-
-	fmt.Println(cfg)
 
 	elasticRepo, err := elasticrepo.NewRepository(cfg.Elastic.Docs.Index, cfg.Elastic.SuggestKeywords.Index, cfg.Elastic.SuggestQueries.Index, "udk",
 		elasticsearch.Config{
@@ -111,7 +110,7 @@ func main() {
 		Addr:                         fmt.Sprintf(":%d", cfg.Http.Port),
 		DisableGeneralOptionsHandler: true,
 		Handler:                      e,
-		//BaseContext:                  func(_ net.Listener) context.Context { return ctx },
+		BaseContext:                  func(_ net.Listener) context.Context { return ctx },
 	})
 
 	if err != nil {

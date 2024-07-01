@@ -30,7 +30,7 @@ type searchResult struct {
 func (r *Repository) SearchArticle(ctx context.Context, query string, keywords []string, year *int, udk *string, page int, size int) (*entity.SearchResultsPaginate, error) {
 	searchQuery := r.BuildSearchQuery(query, keywords, year, udk, page, size)
 
-	fmt.Println(searchQuery)
+	fmt.Print(searchQuery)
 
 	response, err := r.client.Search(
 		r.client.Search.WithContext(ctx),

@@ -141,7 +141,8 @@ export const Article: FC<SearchedDocument> = ({document, onBadgeClick}) => {
             </CardContent>
             <CardContent className="text-left">
                 <BudgesGroup children={[
-                        document.article.udk?.trim() == null ? <></> : <Badge className="cursor-default">УДК {document.article.udk}</Badge>,
+                        document.article.udk?.trim() == null ? <></> : <Badge className="ml-1 cursor-default">УДК {document.article.udk}</Badge>,
+                        document.article.published?.trim() == null ? <></> : <Badge className="ml-1 cursor-default">Выпущено {document.article.published}</Badge>,
                         ...document.article.keywords.slice(0, 5).map(keyword =><Badge onClick={() => onBadgeClick(keyword)} className={`ml-1 bg-gray-600 cursor-pointer`}>{keyword}</Badge>)
                     ]} max={3}/>
             </CardContent>
@@ -191,7 +192,7 @@ export const Article: FC<SearchedDocument> = ({document, onBadgeClick}) => {
                 <div className="mt-[10px] pb-4">
                     {highlightOpened &&
                     (<div className="text-left">
-                        {document.highlight["article.content"].map(highlight => <li key={highlight} dangerouslySetInnerHTML={{__html: highlight}}/>)}
+                        {document.highlight["article.content"]?.map(highlight => <li key={highlight} dangerouslySetInnerHTML={{__html: highlight}}/>)}
                     </div>)
                     }
                 </div>

@@ -1,69 +1,70 @@
 version: "3.8"
 services:
   elastic:
-      image: elasticsearch:8.10.2
-      container_name: elastic
-      environment:
-        discovery.type: single-node
-        xpack.security.enabled: false
-      ports:
-        - 9200:9200
-      volumes:
-        - ./volumes/elastic/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
-        - ./volumes/elastic/hunspell:/usr/share/elasticsearch/config/hunspell
-      networks:
-        Databases:
-          aliases:
-            - elastic
+    container_name: elastic
+    image: elasticsearch:8.10.2
+    restart: always
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - cluster.routing.allocation.disk.threshold_enabled=false
+    ports:
+      - 9200:9200
+    volumes:
+      - ./volumes/elastic/data:/usr/share/elasticsearch/data
+      - ./volumes/elastic/hunspell:/usr/share/elasticsearch/config/hunspell
+    networks:
+      Databases:
+        aliases:
+          - elastic
   
   mongo:
     image: mongo
     restart: always
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: password
+    env_file:
+      - secrets\mongo\mongo.env
+    volumes:
+      - "./volumes/mongo/db:/data/db"
     ports:
       - 27017:27017
     networks:
         Databases:
-  mongo-express:
-    image: mongo-express
-    restart: always
-    ports:
-      - 8081:8081
-    environment:
-      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
-      ME_CONFIG_MONGODB_ADMINPASSWORD: password
-      ME_CONFIG_MONGODB_URL: mongodb://root:password@mongo:27017/
-    networks:
-        Databases:
+          aliases:
+            - mongo
 
   redis:
-    container_name: redis
-    image: redis/redis-stack-server:7.2.0-v6
+    container_name: doc-search-cache
+    image: redis/redis-stack:7.2.0-v6
+    restart: always
+    command: redis-server --save 20 1 --loglevel warning --requirepass ${REDIS_PASSWORD}
     ports:
       - "6379:6379"
+      - "8001:8001"
 
+  docprovider:
+    build:
+      context: get_doc_service/app
+      dockerfile: Dockerfile
     
-  # frontend:
-  #   build:
-  #     context: frontend/app
-  #     dockerfile: Dockerfile
-  #   networks:
-  #     Frontend:
-  #       aliases:
-  #         - doc-search
-  # backend:
-  #   build: 
-  #     context: backend/app
-  #     dockerfile: Dockerfile
-  #   ports:
-  #     - 8001:8001
-  #   networks:
-  #     Backend:
-  #       aliases:
-  #         - doc-search-api
-  #     Databases:
+  frontend:
+    build:
+      context: frontend/app
+      dockerfile: Dockerfile
+    networks:
+      Backend:
+
+  backend:
+    build: 
+      context: ./backend/app-golang
+      dockerfile: Dockerfile
+    ports:
+      - 8085:8085
+    networks:
+      Backend:
+        aliases:
+          - backend
+      Databases:
+
   # nginx:
   #   build: 
   #     context: nginx
@@ -80,5 +81,3 @@ networks:
   # Frontend:
   Databases:
   # Backend:
-    
-  

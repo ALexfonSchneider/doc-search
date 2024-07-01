@@ -29,10 +29,9 @@ func (s *Service) delay() {
 	time.Sleep(time.Duration(s.Delay))
 }
 
-func (s *Service) handleNewDocument(ctx context.Context, document *entity.Document) error {
+func (s *Service) handleAddDocument(ctx context.Context, document *entity.Document) error {
 	if err := s.Repository.CreateDocument(ctx, document); err != nil {
 		if errors.Is(err, &entity.DocumentExistsErr{}) {
-			//pass
 		} else {
 			return errors.WithMessage(err, "Could not add document to storage")
 		}
@@ -69,6 +68,10 @@ func (s *Service) handleDeleteDocument(ctx context.Context, document *entity.Doc
 		return errors.WithMessage(err, "Could not delete document")
 	}
 
+	if err := s.Repository.DeleteDocument(ctx, document.Article.ArticleId); err != nil {
+		return errors.WithMessage(err, "Could not delete delete document")
+	}
+
 	createAt := time.Now()
 	var newActions []entity.DocAction
 	for _, keyword := range document.Article.Keywords {
@@ -84,10 +87,6 @@ func (s *Service) handleDeleteDocument(ctx context.Context, document *entity.Doc
 
 	if err := s.Actions.AddActions(ctx, newActions); err != nil {
 		return errors.WithMessage(err, "Could not add action")
-	}
-
-	if err := s.Repository.DeleteDocument(ctx, document.Article.ArticleId); err != nil {
-		return errors.WithMessage(err, "Could not delete delete document")
 	}
 
 	return nil
@@ -157,13 +156,19 @@ func (s *Service) Start(ctx context.Context) {
 			s.Log.Info().Timestamp().Any("action", action).Msg("Start processing action")
 
 			if action.Action == entity.Add {
-				if err := s.handleNewDocument(ctx, action.Document); err != nil {
+				if err := s.handleAddDocument(ctx, action.Document); err != nil {
 					s.Log.Error().Timestamp().Msg(err.Error())
 					s.onErrorDelay()
 					continue
 				}
 			} else if action.Action == entity.Delete {
-				if err := s.handleDeleteDocument(ctx, action.Document); err != nil {
+				document, err := s.Repository.GetDocument(ctx, action.ArticleId)
+				if err != nil {
+					s.Log.Error().Timestamp().Msg(err.Error())
+					s.onErrorDelay()
+					continue
+				}
+				if err := s.handleDeleteDocument(ctx, document); err != nil {
 					s.Log.Error().Timestamp().Msg(err.Error())
 					s.onErrorDelay()
 					continue

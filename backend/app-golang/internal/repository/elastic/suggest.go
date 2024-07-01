@@ -13,7 +13,8 @@ type keywordsSuggestResult struct {
 			Options []struct {
 				Content struct {
 					KeywordsSuggest struct {
-						Value string `json:"input"`
+						Value  string `json:"input"`
+						Weight int    `json:"weight"`
 					} `json:"keywords_suggest"`
 				} `json:"_source"`
 			} `json:"options"`
@@ -39,9 +40,11 @@ func (r *Repository) SuggestKeywords(ctx context.Context, query string) (*entity
 		return nil, err
 	}
 
-	var suggestions []string = make([]string, 0)
+	suggestions := make([]string, 0, 0)
 	for _, options := range mapRes.Suggest.KeywordsSuggest[0].Options {
-		suggestions = append(suggestions, options.Content.KeywordsSuggest.Value)
+		if options.Content.KeywordsSuggest.Weight > 0 {
+			suggestions = append(suggestions, options.Content.KeywordsSuggest.Value)
+		}
 	}
 
 	return &entity.Suggestions{Suggestions: suggestions}, nil
@@ -79,7 +82,7 @@ func (r *Repository) SuggestQueries(ctx context.Context, query string) (*entity.
 		return nil, err
 	}
 
-	var suggestions []string = make([]string, 0)
+	suggestions := make([]string, 0)
 	for _, options := range mapRes.Suggest.QuerySuggest[0].Options {
 		suggestions = append(suggestions, options.Content.QuerySuggest.Value)
 	}
